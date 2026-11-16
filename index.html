@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Gmail Sell App</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a1a2e; min-height: 100vh; padding: 15px; color: #eee; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  .hidden { display: none !important; }
+
+  /* Login */
+  .login-box { background: #16213e; padding: 40px 30px; border-radius: 15px; max-width: 380px; margin: 80px auto; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+  .login-box h1 { color: #fff; margin-bottom: 8px; font-size: 24px; }
+  .login-box p { color: #aaa; margin-bottom: 25px; font-size: 14px; }
+  .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 13px; background: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; color: #333; cursor: pointer; }
+  .google-btn:hover { background: #f0f0f0; }
+  .google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .google-icon { width: 20px; height: 20px; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #e94560, #0f3460); padding: 20px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .header h1 { font-size: 20px; color: #fff; }
+  .header .email { font-size: 12px; color: #ffd; margin-top: 3px; }
+  .logout-btn { padding: 7px 14px; background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4); border-radius: 6px; cursor: pointer; font-size: 13px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+  .tab { padding: 10px 18px; background: #16213e; color: #ccc; border: 1px solid #0f3460; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
+  .tab.active { background: #e94560; color: #fff; border-color: #e94560; }
+
+  /* Card */
+  .card { background: #16213e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  .card h2 { font-size: 17px; color: #fff; margin-bottom: 12px; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 8px; background: #0f3460; color: #fff; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 10px 8px; border-bottom: 1px solid #0f3460; color: #ddd; }
+  tr:hover td { background: #1a2847; }
+  .mono { font-family: monospace; font-size: 12px; }
+  .pwd { color: #ffd93d; font-family: monospace; font-size: 12px; }
+
+  .badge { padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; display: inline-block; }
+  .badge.pending { background: #fff3cd; color: #856404; }
+  .badge.approved { background: #d4edda; color: #155724; }
+  .badge.rejected { background: #f8d7da; color: #721c24; }
+
+  .btn { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; margin-right: 4px; }
+  .btn.approve { background: #28a745; color: #fff; }
+  .btn.approve:hover { background: #218838; }
+  .btn.reject { background: #dc3545; color: #fff; }
+  .btn.reject:hover { background: #c82333; }
+
+  .empty { text-align: center; color: #888; padding: 20px; font-size: 14px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+  @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } table { font-size: 11px; } }
+  .stat-card { background: #16213e; padding: 15px; border-radius: 10px; text-align: center; }
+  .stat-card .label { font-size: 11px; color: #888; text-transform: uppercase; }
+  .stat-card .value { font-size: 22px; font-weight: bold; color: #fff; margin-top: 4px; }
+
+  /* Not admin */
+  .not-admin { background: #16213e; padding: 40px 30px; border-radius: 15px; max-width: 400px; margin: 80px auto; text-align: center; }
+  .not-admin h2 { color: #e94560; margin-bottom: 12px; }
+  .not-admin p { color: #aaa; font-size: 14px; margin-bottom: 15px; }
+  .not-admin code { background: #0f3460; padding: 3px 8px; border-radius: 4px; color: #ffd93d; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- LOGIN -->
+  <div id="loginScreen" class="login-box">
+    <h1>🔐 Admin Panel</h1>
+    <p>Sign in with Google (admin only)</p>
+    <button class="google-btn" id="googleLoginBtn">
+      <svg class="google-icon" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      Sign in with Google
+    </button>
+    <div id="loginMsg" style="margin-top:12px;color:#ff6b6b;font-size:13px;min-height:18px;"></div>
+  </div>
+
+  <!-- NOT ADMIN -->
+  <div id="notAdminScreen" class="not-admin hidden">
+    <h2>🚫 Access Denied</h2>
+    <p>Aap admin nahi ho.</p>
+    <p>Admin banne ke liye Firebase Realtime Database mein:</p>
+    <p style="margin-top:10px;"><code>admins/{YOUR_UID} = true</code></p>
+    <p style="margin-top:15px;">Aapka UID: <code id="myUid"></code></p>
+    <button class="google-btn" style="margin-top:20px;" onclick="location.reload()">Try Again</button>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div id="adminScreen" class="hidden">
+    <div class="header">
+      <div>
+        <h1>🔐 Admin Panel</h1>
+        <div class="email" id="adminEmail"></div>
+      </div>
+      <button class="logout-btn" id="logoutBtn">Logout</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="label">Pending Sells</div><div class="value" id="statPendingSells">0</div></div>
+      <div class="stat-card"><div class="label">Approved Sells</div><div class="value" id="statApprovedSells">0</div></div>
+      <div class="stat-card"><div class="label">Pending Withdrawals</div><div class="value" id="statPendingWd">0</div></div>
+      <div class="stat-card"><div class="label">Total Users</div><div class="value" id="statUsers">0</div></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="sells">💰 Sell Requests</div>
+      <div class="tab" data-tab="withdraws">🏦 Withdraw Requests</div>
+    </div>
+
+    <!-- SELLS -->
+    <div id="sellsCard" class="card">
+      <h2>💰 Sell Requests</h2>
+      <div id="sellsList"><div class="empty">Loading...</div></div>
+    </div>
+
+    <!-- WITHDRAWS -->
+    <div id="withdrawsCard" class="card hidden">
+      <h2>🏦 Withdraw Requests</h2>
+      <div id="withdrawsList"><div class="empty">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, get, set, update, onValue, increment }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBSrwpQ0gADMCUaqWOZlzLry__h_HzPXCA",
+  authDomain: "sell-app-b3af5.firebaseapp.com",
+  databaseURL: "https://sell-app-b3af5-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "sell-app-b3af5",
+  storageBucket: "sell-app-b3af5.firebasestorage.app",
+  messagingSenderId: "829635601470",
+  appId: "1:829635601470:web:2eccdf74c446254eb71d6f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+const $ = id => document.getElementById(id);
+let currentUser = null;
+let isAdmin = false;
+
+// ---- AUTH ----
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    $('loginScreen').classList.add('hidden');
+
+    // Check admin
+    const adminSnap = await get(ref(db, 'admins/' + user.uid));
+    if (adminSnap.exists() && adminSnap.val() === true) {
+      isAdmin = true;
+      $('adminScreen').classList.remove('hidden');
+      $('adminEmail').textContent = user.email;
+      startListeners();
+    } else {
+      $('notAdminScreen').classList.remove('hidden');
+      $('myUid').textContent = user.uid;
+    }
+  } else {
+    currentUser = null;
+    isAdmin = false;
+    $('loginScreen').classList.remove('hidden');
+    $('adminScreen').classList.add('hidden');
+    $('notAdminScreen').classList.add('hidden');
+  }
+});
+
+// ---- LOGIN ----
+$('googleLoginBtn').onclick = async () => {
+  $('googleLoginBtn').disabled = true;
+  $('loginMsg').textContent = 'Opening Google...';
+  try {
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch (e) {
+    $('loginMsg').textContent = 'Error: ' + e.message;
+    $('googleLoginBtn').disabled = false;
+  }
+};
+
+// ---- LOGOUT ----
+$('logoutBtn').onclick = () => signOut(auth);
+
+// ---- TABS ----
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    $('sellsCard').classList.toggle('hidden', target !== 'sells');
+    $('withdrawsCard').classList.toggle('hidden', target !== 'withdraws');
+  };
+});
+
+// ---- LISTENERS ----
+function startListeners() {
+  // Stats
+  onValue(ref(db, 'users'), (snap) => {
+    $('statUsers').textContent = snap.exists() ? Object.keys(snap.val()).length : 0;
+  });
+
+  // Sell requests live
+  onValue(ref(db, 'sellRequests'), (snap) => {
+    const data = snap.val() || {};
+    const arr = Object.entries(data).sort((a,b) => (b[1].createdAt||0) - (a[1].createdAt||0));
+
+    $('statPendingSells').textContent = arr.filter(([k,v]) => v.status === 'pending').length;
+    $('statApprovedSells').textContent = arr.filter(([k,v]) => v.status === 'approved').length;
+
+    const list = $('sellsList');
+    if (arr.length === 0) {
+      list.innerHTML = '<div class="empty">No sell requests yet</div>';
+      return;
+    }
+
+    let html = `<table>
+      <thead><tr>
+        <th>User</th><th>Gmail</th><th>Password</th><th>Price</th><th>Date</th><th>Status</th><th>Action</th>
+      </tr></thead><tbody>`;
+
+    arr.forEach(([id, r]) => {
+      const actions = r.status === 'pending'
+        ? `<button class="btn approve" onclick="approveSell('${id}')">✓ Approve</button>
+           <button class="btn reject" onclick="rejectSell('${id}')">✗ Reject</button>`
+        : '—';
+      html += `<tr>
+        <td>${r.userEmail || ''}</td>
+        <td class="mono">${r.gmailAddress || ''}</td>
+        <td class="pwd">${r.gmailPassword || ''}</td>
+        <td>$${r.price || 0}</td>
+        <td>${new Date(r.createdAt||0).toLocaleString()}</td>
+        <td><span class="badge ${r.status}">${r.status}</span></td>
+        <td>${actions}</td>
+      </tr>`;
+    });
+
+    html += '</tbody></table>';
+    list.innerHTML = html;
+  });
+
+  // Withdraw requests live
+  onValue(ref(db, 'withdrawRequests'), (snap) => {
+    const data = snap.val() || {};
+    const arr = Object.entries(data).sort((a,b) => (b[1].createdAt||0) - (a[1].createdAt||0));
+
+    $('statPendingWd').textContent = arr.filter(([k,v]) => v.status === 'pending').length;
+
+    const list = $('withdrawsList');
+    if (arr.length === 0) {
+      list.innerHTML = '<div class="empty">No withdraw requests yet</div>';
+      return;
+    }
+
+    let html = `<table>
+      <thead><tr>
+        <th>User</th><th>Amount</th><th>BTC Address</th><th>Date</th><th>Status</th><th>Action</th>
+      </tr></thead><tbody>`;
+
+    arr.forEach(([id, r]) => {
+      const actions = r.status === 'pending'
+        ? `<button class="btn approve" onclick="approveWithdraw('${id}','${r.uid}','${r.amount}')">✓ Approve (Paid)</button>
+           <button class="btn reject" onclick="rejectWithdraw('${id}','${r.uid}','${r.amount}')">✗ Reject</button>`
+        : '—';
+      html += `<tr>
+        <td>${r.userEmail || ''}</td>
+        <td><b>$${r.amount || 0}</b></td>
+        <td class="mono" style="word-break:break-all;max-width:200px;">${r.btcAddress || ''}</td>
+        <td>${new Date(r.createdAt||0).toLocaleString()}</td>
+        <td><span class="badge ${r.status}">${r.status}</span></td>
+        <td>${actions}</td>
+      </tr>`;
+    });
+
+    html += '</tbody></table>';
+    list.innerHTML = html;
+  });
+}
+
+// ---- APPROVE SELL ----
+window.approveSell = async (id) => {
+  if (!confirm('Approve this sell request? $5 credit to user.')) return;
+  try {
+    const rSnap = await get(ref(db, 'sellRequests/' + id));
+    if (!rSnap.exists()) return alert('Request not found');
+    const r = rSnap.val();
+    if (r.status !== 'pending') return alert('Already processed');
+
+    // Update request
+    await update(ref(db, 'sellRequests/' + id), {
+      status: 'approved',
+      reviewedAt: Date.now(),
+      reviewedBy: currentUser.uid
+    });
+
+    // Credit user
+    const uRef = ref(db, 'users/' + r.uid);
+    const uSnap = await get(uRef);
+    if (uSnap.exists()) {
+      const u = uSnap.val();
+      await update(uRef, {
+        balance: (u.balance || 0) + 5,
+        totalSold: (u.totalSold || 0) + 1
+      });
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+};
+
+// ---- REJECT SELL ----
+window.rejectSell = async (id) => {
+  if (!confirm('Reject this sell request?')) return;
+  try {
+    await update(ref(db, 'sellRequests/' + id), {
+      status: 'rejected',
+      reviewedAt: Date.now(),
+      reviewedBy: currentUser.uid
+    });
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+};
+
+// ---- APPROVE WITHDRAW ----
+window.approveWithdraw = async (id, uid, amt) => {
+  if (!confirm('Confirm: Have you sent $' + amt + ' BTC to this address?\n\nApprove only AFTER sending BTC.')) return;
+  try {
+    await update(ref(db, 'withdrawRequests/' + id), {
+      status: 'approved',
+      reviewedAt: Date.now(),
+      reviewedBy: currentUser.uid
+    });
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+};
+
+// ---- REJECT WITHDRAW ----
+window.rejectWithdraw = async (id, uid, amt) => {
+  if (!confirm('Reject this withdrawal? Balance $' + amt + ' will be refunded.')) return;
+  try {
+    const uRef = ref(db, 'users/' + uid);
+    const uSnap = await get(uRef);
+    if (uSnap.exists()) {
+      const u = uSnap.val();
+      await update(uRef, {
+        balance: (u.balance || 0) + parseFloat(amt)
+      });
+    }
+
+    await update(ref(db, 'withdrawRequests/' + id), {
+      status: 'rejected',
+      reviewedAt: Date.now(),
+      reviewedBy: currentUser.uid
+    });
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+};
+</script>
+</body>
+</html>
